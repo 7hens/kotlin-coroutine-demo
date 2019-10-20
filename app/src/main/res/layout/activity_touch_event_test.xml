@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:ignore="RtlHardcoded,HardcodedText">
+
+    <cn.thens.andemo.test.touch.TouchEventTestParent
+        android:id="@+id/vGrandParent"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="@color/colorAccent">
+
+        <cn.thens.andemo.test.touch.TouchEventTestParent
+            android:id="@+id/vParent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="60dp"
+            android:layout_marginBottom="8dp"
+            android:background="@color/colorPrimary">
+
+            <cn.thens.andemo.test.touch.TouchEventTestChild
+                android:id="@+id/vChild"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="60dp"
+                android:layout_marginBottom="8dp"
+                android:background="@android:color/holo_blue_light" />
+
+        </cn.thens.andemo.test.touch.TouchEventTestParent>
+    </cn.thens.andemo.test.touch.TouchEventTestParent>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <LinearLayout style="@style/TouchEventTest.Parent">
+
+        <TextView
+            style="@style/TouchEventTest.Event"
+            android:text="G.Intercept" />
+
+        <TextView
+            android:id="@+id/vGIDown"
+            style="@style/TouchEventTest.Action"
+            android:text="DOWN" />
+
+        <TextView
+            android:id="@+id/vGIMove"
+            style="@style/TouchEventTest.Action"
+            android:text="MOVE" />
+
+        <TextView
+            android:id="@+id/vGIUp"
+            style="@style/TouchEventTest.Action"
+            android:text="UP" />
+
+        <TextView
+            android:id="@+id/vGICancel"
+            style="@style/TouchEventTest.Action"
+            android:text="CANCEL" />
+    </LinearLayout>
+
+    <LinearLayout style="@style/TouchEventTest.Parent">
+
+        <TextView
+            style="@style/TouchEventTest.Event"
+            android:text="P.Intercept" />
+
+        <TextView
+            android:id="@+id/vPIDown"
+            style="@style/TouchEventTest.Action"
+            android:text="DOWN" />
+
+        <TextView
+            android:id="@+id/vPIMove"
+            style="@style/TouchEventTest.Action"
+            android:text="MOVE" />
+
+        <TextView
+            android:id="@+id/vPIUp"
+            style="@style/TouchEventTest.Action"
+            android:text="UP" />
+
+        <TextView
+            android:id="@+id/vPICancel"
+            style="@style/TouchEventTest.Action"
+            android:text="CANCEL" />
+    </LinearLayout>
+
+    <LinearLayout style="@style/TouchEventTest.Parent">
+
+        <TextView
+            style="@style/TouchEventTest.Event"
+            android:text="P.Touch" />
+
+        <TextView
+            android:id="@+id/vPTDown"
+            style="@style/TouchEventTest.Action"
+            android:text="DOWN" />
+
+        <TextView
+            android:id="@+id/vPTMove"
+            style="@style/TouchEventTest.Action"
+            android:text="MOVE" />
+
+        <TextView
+            android:id="@+id/vPTUp"
+            style="@style/TouchEventTest.Action"
+            android:text="UP" />
+
+        <TextView
+            android:id="@+id/vPTCancel"
+            style="@style/TouchEventTest.Action"
+            android:text="CANCEL" />
+    </LinearLayout>
+
+    <LinearLayout style="@style/TouchEventTest.Parent">
+
+        <TextView
+            style="@style/TouchEventTest.Event"
+            android:text="C.Touch" />
+
+        <TextView
+            android:id="@+id/vCTDown"
+            style="@style/TouchEventTest.Action"
+            android:text="DOWN" />
+
+        <TextView
+            android:id="@+id/vCTMove"
+            style="@style/TouchEventTest.Action"
+            android:text="MOVE" />
+
+        <TextView
+            android:id="@+id/vCTUp"
+            style="@style/TouchEventTest.Action"
+            android:text="UP" />
+
+        <TextView
+            android:id="@+id/vCTCancel"
+            style="@style/TouchEventTest.Action"
+            android:text="CANCEL" />
+    </LinearLayout>
+</LinearLayout>

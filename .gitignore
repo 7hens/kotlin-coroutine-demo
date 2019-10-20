@@ -1,0 +1,13 @@
+.idea/
+.gradle/
+.settings/
+bin/
+build/
+release/
+captures/
+.externalNativeBuild/
+buildSrc/libs/gradle-plugin.jar
+*.log
+*.iml
+.DS_Store
+local.properties

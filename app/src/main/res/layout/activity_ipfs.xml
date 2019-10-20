@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText">
+
+    <Button
+        android:id="@+id/vAddFile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="add file"
+        android:textAllCaps="false" />
+
+    <Button
+        android:id="@+id/vCatFile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="cat file"
+        android:textAllCaps="false"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/vFileHash"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="file hash:" />
+
+    <TextView
+        android:id="@+id/vFileContent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="file content:" />
+
+</LinearLayout>

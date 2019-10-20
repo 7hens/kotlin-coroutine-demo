@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="cn.thens.andemo">
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-feature android:name="android.hardware.location.gps" />
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        tools:ignore="AllowBackup,GoogleAppIndexingWarning">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".zygote.poet.PoetActivity" />
+        <activity
+            android:name=".test.aidl.service.LocalActivity"
+            android:exported="true" />
+        <activity
+            android:name="cn.thens.andemo.test.jingyu.blur.BlurActivity"
+            android:exported="true" />
+        <activity
+            android:name="cn.thens.andemo.test.jingyu.text2.Text2Activity"
+            android:exported="true" />
+        <activity
+            android:name="cn.thens.andemo.test.jingyu.flatlayout.FlatLayoutActivity"
+            android:exported="true" />
+
+        <activity
+            android:name=".test.IPFSActivity"
+            android:exported="true" />
+        <activity android:name=".test.BlurryOrMaskActivity" android:exported="true"/>
+        <activity android:name=".canary.evo.EvoActivity" android:exported="true"/>
+        <activity android:name=".test.touch.TouchEventTestActivity" android:exported="true"/>
+
+        <service
+            android:name=".test.aidl.service.RemoteService"
+            android:exported="true"
+            android:process=":remote">
+            <intent-filter>
+                <action android:name="cn.thens.andemo.IMyAidlInterface" />
+            </intent-filter>
+        </service>
+
+
+        <provider
+            android:name=".test.provider.MyContentProvider"
+            android:authorities="${applicationId}.my.content" />
+    </application>
+
+</manifest>
