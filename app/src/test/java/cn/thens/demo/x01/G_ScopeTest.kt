@@ -9,7 +9,7 @@ import java.lang.RuntimeException
 /**
  * @author 7hens
  */
-class G_ScopeTest: ITest {
+class G_ScopeTest : ITest {
     @Test
     fun exceptionHandler() = runBlocking {
         val exceptionHandler = CoroutineExceptionHandler { coroutineContext, throwable ->
@@ -24,36 +24,127 @@ class G_ScopeTest: ITest {
     }
 
     @Test
-    fun globalScope() = runBlocking {
-        log(1)
+    fun coroutineScope2() = runBlocking {
         GlobalScope.launch {
-            log(2)
-            throw RuntimeException("bomb")
+            log(0)
+            try {
+                coroutineScope {
+                    log(1)
+                    try {
+                        launch {
+                            log(2)
+                            throw RuntimeException("3.exception")
+                        }
+                        delay(100L)
+                        log(4)
+                    } catch (e: Exception) {
+                        log("5.catch: " + e.message)
+                    }
+                }
+            } catch (e: Exception) {
+                log("6.catch: " + e.message)
+            }
+
+            log(10)
+            try {
+                coroutineScope {
+                    log(11)
+                    launch(Dispatchers.IO) {
+                        try {
+                            log(12)
+                            delay(100L)
+                            log(13)
+                        } catch (e: Exception) {
+                            log("14.catch: " + e.message)
+                        }
+                    }
+                    delay(10L)
+                    log(15)
+                    throw RuntimeException("16.exception")
+                }
+            } catch (e: Exception) {
+                log("17.catch: " + e.message)
+            }
         }
-        log(4)
+        delay(1000L)
+        log("end")
     }
 
     @Test
-    fun coroutineScope() = runBlocking {
-        log(1)
-        coroutineScope {
-            launch {
-                log(2)
-                throw RuntimeException("bomb")
+    fun supervisorScope2() = runBlocking {
+        GlobalScope.launch {
+            log(0)
+            supervisorScope {
+                try {
+                    log(1)
+                    launch {
+                        log(2)
+                        throw RuntimeException("3.exception")
+                    }
+                    delay(100L)
+                    log(4)
+                } catch (e: Exception) {
+                    log("5.catch: " + e.message)
+                }
+            }
+
+            log(10)
+            supervisorScope {
+                log(11)
+                launch(Dispatchers.IO) {
+                    try {
+                        log(12)
+                        delay(100L)
+                        log(13)
+                    } catch (e: Exception) {
+                        log("16.catch: " + e.message)
+                    }
+                }
+                delay(10L)
+                log(14)
+                throw RuntimeException("18.exception")
             }
         }
-        log(4)
+        delay(1000L)
+        log("end")
     }
 
     @Test
-    fun supervisorScope() = runBlocking {
-        log(1)
-        supervisorScope {
-            launch {
-                log(2)
-                throw RuntimeException("bomb")
+    fun globalScope() = runBlocking {
+        GlobalScope.launch {
+            log(0)
+            coroutineScope {
+                try {
+                    log(1)
+                    GlobalScope.launch {
+                        log(2)
+                        throw RuntimeException("3.exception")
+                    }
+                    delay(100L)
+                    log(4)
+                } catch (e: Exception) {
+                    log("5.catch: " + e.message)
+                }
+            }
+
+            log(10)
+            coroutineScope {
+                log(11)
+                GlobalScope.launch(Dispatchers.IO) {
+                    try {
+                        log(12)
+                        delay(100L)
+                        log(13)
+                    } catch (e: Exception) {
+                        log("16.catch: " + e.message)
+                    }
+                }
+                delay(10L)
+                log(14)
+                throw RuntimeException("18.exception")
             }
         }
-        log(4)
+        delay(1000L)
+        log("end")
     }
 }

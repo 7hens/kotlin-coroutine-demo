@@ -18,37 +18,31 @@ buildscript {
 
     repositories {
         google()
-        jcenter()
-        mavenLocal()
-        maven("https://dl.bintray.com/7hens/maven/repositories")
-        maven("https://repo.spring.io/plugins-snapshot")
         maven("http://maven.aliyun.com/nexus/content/groups/public/")
         maven("http://repository.sonatype.org/content/groups/public")
         maven("http://mvnrepository.com/")
+        maven("https://repo.spring.io/plugins-snapshot")
         maven("https://jitpack.io")
+        jcenter()
+        mavenLocal()
     }
     dependencies {
         classpath("com.android.tools.build:gradle:3.2.1")
         classpath(kotlin("gradle-plugin", kotlinVersion))
         classpath(kotlin("script-runtime", kotlinVersion))
         classpath("org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17")
-//        classpath "com.qihoo360.replugin:replugin-host-gradle:$repluginVersion"
-//        classpath "com.qihoo360.replugin:replugin-plugin-gradle:$repluginVersion"
-//        classpath "cn.thens.andemo:test-gradle-plugin:$VERSION"
     }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
-        mavenLocal()
-        maven("https://dl.bintray.com/7hens/maven/")
         maven("http://maven.aliyun.com/nexus/content/groups/public/")
         maven("http://repository.sonatype.org/content/groups/public")
         maven("http://mvnrepository.com/")
         maven("https://jitpack.io")
-        maven("http://dl.bintray.com/vsazel/libjingle")
+        jcenter()
+        mavenLocal()
     }
     tasks.withType(Javadoc::class.java) {
         setExcludes(listOf("**/*.kt"))

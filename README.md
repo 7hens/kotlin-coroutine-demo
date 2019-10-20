@@ -2,7 +2,7 @@
 
 ## 什么是协程
 
-协程时一套由 Kotlin 提供的线程框架。
+协程是一套由 Kotlin 提供的线程框架。
 
 类似于 Java 的 Executor 和 Android 的 AsyncTask，Kotlin 的协程也对 Thread 相关的 API 做了一套封装，让我们不用过多关心线程也可以很方便的写出并发操作。
 
@@ -184,7 +184,7 @@ object Dispatchers {
 - Default：使用默认的公共线程池【线程数量 = max(2, CPU 核心数)】。
 - Main：在主线程中运行（单一线程）
 - Unconfined：就是不指定线程，直接执行
-- IO：适用于 IO 密集型的任务【线程数量 = max(64, CPU 核心数)】。共享 Default 的线程，因此协程使用 withContext 从 Default 切换到 IO 并不会触发线程切换。
+- IO：适用于 IO 密集型的任务【线程数量 = max(64, CPU 核心数)】。共享 Default 的线程池，因此协程使用 withContext 从 Default 切换到 IO 并不会触发线程切换。
 
 `F_DispatcherTest.kt`
 
