@@ -21,33 +21,30 @@ class B_BuilderTest : ITest {
     @Test
     fun async() = runBlocking {
         log(1)
-        val job = async {
+        log(async {
             log(2)
-            "hello"
-        }
-        log(job.await())
-        log(3)
+            3
+        }.await())
+        log(4)
     }
 
     @Test
     fun runBlocking2() = runBlocking {
         log(1)
-        val result = runBlocking {
+        log(runBlocking(Dispatchers.IO) {
             log(2)
-            "hello"
-        }
-        log(result)
-        log(3)
+            3
+        })
+        log(4)
     }
 
     @Test
     fun withContext2() = runBlocking {
         log(1)
-        val result = withContext(Dispatchers.Default) {
+        log(withContext(Dispatchers.Default) {
             log(2)
-            "hello"
-        }
-        log(result)
-        log(3)
+            3
+        })
+        log(4)
     }
 }

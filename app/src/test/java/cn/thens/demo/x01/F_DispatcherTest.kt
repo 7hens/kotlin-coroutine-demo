@@ -15,8 +15,10 @@ class F_DispatcherTest : ITest {
         log(1)
         withContext(Dispatchers.IO) {
             log(2)
+            delay(100L)
+            log(3)
         }
-        log(3)
+        log(4)
     }
 
     @Test
@@ -24,26 +26,43 @@ class F_DispatcherTest : ITest {
         log(1)
         withContext(Dispatchers.Unconfined) {
             log(2)
+            delay(100L)
+            log(3)
         }
         launch(Dispatchers.Default) {
-            log(3)
+            log(4)
             withContext(Dispatchers.Unconfined) {
-                log(4)
+                log(5)
             }
         }
-        log(5)
+        log(6)
     }
 
     @Test
     fun custom() = runBlocking {
-        log(-1)
+        log(1)
         Executors.newFixedThreadPool(10).asCoroutineDispatcher().use { dispatcher ->
             (0..100).forEach { i ->
                 launch(dispatcher) {
-                    log(i)
+                    log("2.$i")
                 }.join()
             }
         }
-        log(-2)
+        log(3)
+    }
+
+    @Test
+    fun scope() = runBlocking {
+        log(1)
+        GlobalScope.launch {
+            log(2)
+        }
+        GlobalScope.launch(coroutineContext) {
+            log(3)
+        }
+        launch {
+            log(4)
+        }
+        log(5)
     }
 }

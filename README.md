@@ -4,7 +4,8 @@
 
 协程是一套由 Kotlin 提供的线程框架。
 
-类似于 Java 的 Executor 和 Android 的 AsyncTask，Kotlin 的协程也对 Thread 相关的 API 做了一套封装，让我们不用过多关心线程也可以很方便的写出并发操作。
+类似于 Java 的 Executor 和 Android 的 AsyncTask，
+Kotlin 的协程也对 Thread 相关的 API 做了一套封装，让我们不用过多关心线程也可以很方便的写出并发操作。
 
 Kotlin 协程的最大好处在于，你可以把运行的不同线程的代码写在同一个代码块里（用看起来同步的方式写出异步代码）。
 
@@ -34,6 +35,8 @@ Coroutine Builders
 - async: 同 launch，但是返回 Deferred。
 - runBlocking：新建一个协程，同时阻塞当前线程，直到协程结束。一般在测试时使用。
 - withContext: 将当前协程切换到指定的 context 中运行（不会新建协程）。
+
+> 从 withContext 的功能中可以看到，一个协程可以被切换到不同的线程里执行，也就是说线程和协程并非包含关系，而是并列关系。
 
 ```java
 fun CoroutineScope.launch(
@@ -79,7 +82,7 @@ enum class CoroutineStart {
 }
 ```
 
-- DEFAULT： 饿汉式启动，launch 调用后，会立即进入待调度状态，一旦调度器 OK 就可以开始执行。
+- DEFAULT：饿汉式启动，launch 调用后，会立即进入待调度状态，一旦调度器 OK 就可以开始执行。
 - LAZY：懒汉式启动， launch 后并不会有任何调度行为，协程体也自然不会进入执行状态，直到调用了 start() 或者 join()。
 - ATOMIC：在遇到第一个挂起点之前，不会停止协程。
 - UNDISPATCHED：立即执行，在遇到第一个挂起点之前，不会切线程（不经过任何调度器）。
@@ -105,15 +108,17 @@ public interface CoroutineContext {
 }
 ```
 
-CoroutineContext 只是一种类似于 Map 的数据结构，里面存储的是 (Key, Element) 的键值对。
+CoroutineContext 本质上是一种类似于 Map 的数据结构，里面存储的是 (Key, Element) 的键值对。
 同时 Element 继承至 CoroutineContext，并且包含了 Key。
 Key 其实是代表了 Element 的类型，或者说功能。
 
 | 功能（Key） | Element                   |
 | ----------- | ------------------------- |
-| 协程名字    | CoroutineName             |
-| 拦截挂起点  | ContinuationInterceptor   |
-| 异常处理    | CoroutineExceptionHandler |
+| 协程名字    | `CoroutineName`             |
+| 拦截挂起点  | `ContinuationInterceptor`   |
+| 异常处理    | `CoroutineExceptionHandler` |
+| 当前任务 | `Job`, `Deferred` |
+| 协程局部数据 | `ThreadLocalElement` |
 
 CoroutineContext 的继承关系图。
 
@@ -126,8 +131,6 @@ CoroutineContext
      |   |- CoroutineName
      |- ContinuationInterceptor
      |   |- CoroutineDispatcher
-     |       |- MainCoroutineDispatcher
-     |       |- ExecutorCoroutineDipatcher
      |- CoroutineExceptionHandler
      |- Job
          |- Deferred
@@ -170,21 +173,18 @@ abstract class CoroutineDispatcher : ContinuationInterceptor {
 }
 ```
 
-dispatch() 方法会在拦截器的方法 interceptContinuation() 中调用，进而实现协程的调度。
+调度器的 dispatch() 方法会在拦截器的 interceptContinuation() 方法中调用，进而实现协程的调度。
 
 ```kotlin
 object Dispatchers {
-    val Default: CoroutineDispatcher    // 线程池
-    val Main: MainCoroutineDispatcher   // UI 线程
-    val Unconfined: CoroutineDispatcher // 直接执行
-    val IO: CoroutineDispatcher         // 线程池
+    val Default: CoroutineDispatcher    // 使用线程池，线程数量为 max(2, CPU 核心数)
+    val Main: MainCoroutineDispatcher   // 在主线程中运行（单一线程）
+    val Unconfined: CoroutineDispatcher // 不指定线程，直接执行
+    val IO: CoroutineDispatcher         // 使用线程池，线程数量为 max(64, CPU 核心数)
 }
 ```
 
-- Default：使用默认的公共线程池【线程数量 = max(2, CPU 核心数)】。
-- Main：在主线程中运行（单一线程）
-- Unconfined：就是不指定线程，直接执行
-- IO：适用于 IO 密集型的任务【线程数量 = max(64, CPU 核心数)】。共享 Default 的线程池，因此协程使用 withContext 从 Default 切换到 IO 并不会触发线程切换。
+IO 调度器会共享 Default 的线程池，因此协程使用 withContext 从 Default 切换到 IO 并不会触发线程切换。
 
 `F_DispatcherTest.kt`
 
@@ -194,24 +194,80 @@ object Dispatchers {
 val myDispatcher = Executors.newSingleThreadExecutor{ r -> Thread(r, "MyThread") }
         .asCoroutineDispatcher()
 
-// 需要手动关闭
+// 在 JVM 中需要手动关闭
 myDispatcher.close()
 ```
 
+默认情况下，`GlobalScope.launch()`使用`Default`调度器，而`launch()`则使用父协程的调度器。
+
 ## 作用域
 
-协程的作用域涉及到协程的取消和异常的传播。
+一个新的协程就是一个新的作用域，它们的关系可以并列，也可以包含，组成了一个作用域的树形结构。
 
-异常处理器是 CoroutineExceptionHandler，它本身也是一个 CoroutineContext。
+```kotlin
+GlobalScope.launch {
+    log(1)
+    launch {
+        log(2)
+        launch {
+            log(3)
+        }
+    }
+    launch {
+        log(4)
+        GlobalScope.launch {
+            log(5)
+        }
+    }
+}
+```
+
+作用域树
+
+```plain
+(1)
+ |- (2)
+ |   |- (3)
+ |- (4)
+
+(5)
+```
+
+默认情况下，每个父协程都要等待它的子协程全部完成后，才能结束自己。
+当一个父协程被取消的时候，所有它的子协程也会被递归的取消。
+
+但 **GlobalScope** 比较特殊，它创建的协程会拥有一个完全独立的顶级作用域。
+在 GlobalScope 中启动的协程类似于守护线程，不能让进程保活。
+慎用。
+
+**coroutineScope** 是默认的协程作用域。在该作用域内，协程的异常是双向传播的。
+任何一个协程的异常，都会导致该作用域内的所有协程的异常。
+
+**supervisorScope** 在该作用域内，协程的异常是单向传播的。
+父协程的异常，会导致子协程的异常。但反过来则不行。
+它更适合一些独立不相干的任务，任何一个任务出问题，并不会影响其他任务的工作。
+需要注意的是，supervisorScope 只能作用于其直接子协程。
+在子协程内再启动子协程，会遵守默认的作用域规则（coroutineScope）。
+
+**MainScope** 类似于 supervisorScope，但默认调度器为 Dispatchers.Main。
 
 `G_ScopeTest`
 
-- GlobeScope：单独启动一个协程作用域，内部的子协程遵从默认的作用域规则。
-- coroutineScope：继承外部 Job 的上下文创建作用域，在其内部的取消操作和未捕获异常都是双向传播的。
-它更适合一系列对等的协程并发的完成一项工作，任何一个子协程异常退出，那么整体都将退出，简单来说就是”一损俱损“。这也是协程内部再启动子协程的默认作用域。
-- supervisorScope：同样是继承外部 Job 的上下文创建作用域，但是取消和异常是单向传播的，只能由父协程向子协程传播，反过来则不行。
-它更适合一些独立不相干的任务，任何一个任务出问题，并不会影响其他任务的工作，简单来说就是”自作自受“。
-需要注意的是，supervisorScope 内部启动的子协程内部再启动子协程，如无明确指出，则遵守默认作用域规则，也即 supervisorScope 只作用域其直接子协程。
+## 异常处理
+
+协程里的异常都是可以 try-catch 的。
+对于没有 try-catch 的异常，你可以添加一个`CoroutineExceptionHandler`的上下文来处理，
+它和`Thread.UncaughtExceptionHandler`很相似。
+
+**取消协程**
+
+协程的取消是通过在挂起点抛出`CancellationException`异常来实现的。
+这个异常并不会影响父协程，所以当你使用`Job.cancel()`来取消一个协程时，并不会取消它的父协程。
+但如果协程抛出了`CancellationException`以外的异常，那么它的父协程将会被取消。
+
+当协程被取消时，你可以在它的挂起点捕捉到`CancellationException`。
+当该异常被捕捉时，协程会继续执行到下一个挂起点，然后又会抛出`CancellationException`。
+也就是说，协程只允许你短暂地捕获`CancellationException`。
 
 ## 参考
 
