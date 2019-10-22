@@ -55,6 +55,18 @@ class H_ExceptionTest : ITest {
         }
     }
 
+    @Test
+    fun supervisorJob() = runBlocking {
+        log(1)
+        val supervisorJob = SupervisorJob()
+        launch(supervisorJob) {
+            log(2)
+            throw Exception("3.e")
+        }
+        yield()
+        log(4)
+    }
+
     private fun createExceptionHandler(): CoroutineExceptionHandler {
         return CoroutineExceptionHandler { coroutineContext, throwable ->
             log("ERROR: " + throwable.message)

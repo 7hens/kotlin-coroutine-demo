@@ -46,6 +46,8 @@ fun CoroutineScope.launch(
 ): Job
 ```
 
+**Job**
+
 Job 和 Thread 的功能基本上是一致的。
 Deferred 是 Job 的子类，可以通过 await() 来获取返回值。
 
@@ -69,6 +71,31 @@ public class Thread implements Runnable {
     public void interrupt();
     public final void join();
 }
+```
+
+Job 的状态。
+
+| **State**                 | [isActive] | [isCompleted] | [isCancelled] |
+| ------------------------- | ---------- | ------------- | ------------- |
+| _New_ (可选的初始状态)    | `false`    | `false`       | `false`       |
+| _Active_ (默认的初始状态) | `true`     | `false`       | `false`       |
+| _Completing_ (中间状态)   | `true`     | `false`       | `false`       |
+| _Cancelling_ (中间状态)   | `false`    | `false`       | `true`        |
+| _Cancelled_ (最终状态)    | `false`    | `true`        | `true`        |
+| _Completed_ (最终状态)    | `false`    | `true`        | `false`       |
+
+```plain
+                                        wait children
++-----+  start  +--------+  complete   +-------------+  finish  +-----------+
+| New | ------> | Active | --------->  | Completing  | -------> | Completed |
++-----+         +--------+             +-------------+          +-----------+
+                 |  cancel / fail       |
+                 |     +----------------+
+                 |     |
+                 V     V
+             +------------+                           finish  +-----------+
+             | Cancelling | --------------------------------> | Cancelled |
+             +------------+                                   +-----------+
 ```
 
 ## 启动模式
@@ -112,13 +139,13 @@ CoroutineContext 本质上是一种类似于 Map 的数据结构，里面存储�
 同时 Element 继承至 CoroutineContext，并且包含了 Key。
 Key 其实是代表了 Element 的类型，或者说功能。
 
-| 功能（Key） | Element                   |
-| ----------- | ------------------------- |
-| 协程名字    | `CoroutineName`             |
-| 拦截挂起点  | `ContinuationInterceptor`   |
-| 异常处理    | `CoroutineExceptionHandler` |
-| 当前任务 | `Job`, `Deferred` |
-| 协程局部数据 | `ThreadLocalElement` |
+| 功能（Key）  | Element                     |
+| ------------ | --------------------------- |
+| 协程名字     | `CoroutineName`             |
+| 拦截挂起点   | `ContinuationInterceptor`   |
+| 异常处理     | `CoroutineExceptionHandler` |
+| 当前任务     | `Job`, `Deferred`           |
+| 协程局部数据 | `ThreadLocalElement`        |
 
 CoroutineContext 的继承关系图。
 
@@ -198,11 +225,21 @@ val myDispatcher = Executors.newSingleThreadExecutor{ r -> Thread(r, "MyThread")
 myDispatcher.close()
 ```
 
-默认情况下，`GlobalScope.launch()`使用`Default`调度器，而`launch()`则使用父协程的调度器。
+默认情况下，`launch()`会使用父协程的调度器，如果父协程没有，则使用`Default`调度器。
 
 ## 作用域
 
-一个新的协程就是一个新的作用域，它们的关系可以并列，也可以包含，组成了一个作用域的树形结构。
+```kotlin
+interface CoroutineScope {
+    val coroutineContext: CoroutineContext
+}
+```
+
+协程作用域只是一个简单的接口，用来提供上下文的值。
+
+协程的创建必须依赖于作用域——`launch`和`async`是`CoroutineScope`的扩展函数 。
+
+一个新的协程就是一个新的作用域（拥有新的上下文），它们的关系可以并列，也可以包含，组成了一个作用域的树形结构。
 
 ```kotlin
 GlobalScope.launch {
@@ -236,20 +273,11 @@ GlobalScope.launch {
 默认情况下，每个父协程都要等待它的子协程全部完成后，才能结束自己。
 当一个父协程被取消的时候，所有它的子协程也会被递归的取消。
 
-但 **GlobalScope** 比较特殊，它创建的协程会拥有一个完全独立的顶级作用域。
+但 **GlobalScope** 比较特殊，它创建的协程会拥有一个完全独立的顶级作用域（因为它的上下文默认为空）。
 在 GlobalScope 中启动的协程类似于守护线程，不能让进程保活。
 慎用。
 
-**coroutineScope** 是默认的协程作用域。在该作用域内，协程的异常是双向传播的。
-任何一个协程的异常，都会导致该作用域内的所有协程的异常。
-
-**supervisorScope** 在该作用域内，协程的异常是单向传播的。
-父协程的异常，会导致子协程的异常。但反过来则不行。
-它更适合一些独立不相干的任务，任何一个任务出问题，并不会影响其他任务的工作。
-需要注意的是，supervisorScope 只能作用于其直接子协程。
-在子协程内再启动子协程，会遵守默认的作用域规则（coroutineScope）。
-
-**MainScope** 类似于 supervisorScope，但默认调度器为 Dispatchers.Main。
+> 从这里可以看到协程和线程的另一个不同：协程是结构化的，而线程不是。
 
 `G_ScopeTest`
 
@@ -262,12 +290,32 @@ GlobalScope.launch {
 **取消协程**
 
 协程的取消是通过在挂起点抛出`CancellationException`异常来实现的。
-这个异常并不会影响父协程，所以当你使用`Job.cancel()`来取消一个协程时，并不会取消它的父协程。
-但如果协程抛出了`CancellationException`以外的异常，那么它的父协程将会被取消。
+这个异常并不会影响父协程，所以当你使用`Job.cancel()`来取消一个协程时，并不会引起它的父协程的取消。
+但如果协程抛出了`CancellationException`以外的异常，那么它的父协程将会被取消，而且它的根作用域内的所有协程都会被取消。
 
 当协程被取消时，你可以在它的挂起点捕捉到`CancellationException`。
 当该异常被捕捉时，协程会继续执行到下一个挂起点，然后又会抛出`CancellationException`。
 也就是说，协程只允许你短暂地捕获`CancellationException`。
+
+**SupervisorJob**
+
+默认情况下，协程的异常是双向传播的。一个协程的异常，会引起整个作用域内所有协程的取消。
+但在很多时候，我们希望子协程的异常不要影响到父协程，这时候可以使用`SupervisorJob`。
+
+`SupervisorJob`类似于`Job`，唯一的不同是，`SupervisorJob`的异常只能单向传播——从父协程传向子协程。
+
+```kotlin
+GlobalScope.launch {
+    log(1)
+    val supervisorJob = SupervisorJob()
+    launch(supervisorJob) {
+        log(2)
+        throw Exception("3.e")
+    }
+    yield()
+    log(4)
+}
+```
 
 ## 参考
 

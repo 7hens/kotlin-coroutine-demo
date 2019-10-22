@@ -70,17 +70,13 @@ class G_ScopeTest : ITest {
     @Test
     fun throwInCoroutineScope() = runBlocking {
         log(1)
-        log(this::class.java)
         coroutineScope {
             log(2)
-            log(this::class.java)
             launch {
                 log(3)
-                log(this::class.java)
-                delay(100)
                 throw Exception("4.e")
             }
-            delay(200)
+            delay(100)
             log(5)
         }
         log(6)
@@ -89,17 +85,13 @@ class G_ScopeTest : ITest {
     @Test
     fun throwInSupervisorScope() = runBlocking {
         log(1)
-        log(this::class.java)
         supervisorScope {
             log(2)
-            log(this::class.java)
             launch {
                 log(3)
-                log(this::class.java)
-                delay(100)
                 throw Exception("4.e")
             }
-            delay(200)
+            delay(100)
             log(5)
         }
         log(6)
