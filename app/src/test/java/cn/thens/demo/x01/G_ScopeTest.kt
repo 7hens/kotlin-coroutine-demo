@@ -18,7 +18,6 @@ class G_ScopeTest : ITest {
             }
         }
         log(3)
-        delay(220L)
     }
 
     @Test

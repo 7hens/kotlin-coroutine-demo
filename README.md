@@ -49,7 +49,7 @@ fun CoroutineScope.launch(
 **Job**
 
 Job 和 Thread 的功能基本上是一致的。
-Deferred 是 Job 的子类，可以通过 await() 来获取返回值。
+Deferred 是 Job 的子类，类似于 java 中的 Future，可以通过调用 await() 来获取协程的返回值。
 
 ```kotlin
 interface Job : CoroutineContext.Element {
@@ -259,7 +259,7 @@ GlobalScope.launch {
 }
 ```
 
-作用域树
+作用域树/协程树
 
 ```plain
 (1)
@@ -270,6 +270,8 @@ GlobalScope.launch {
 (5)
 ```
 
+> 从这里可以看到协程和线程的另一个不同：协程是结构化的，而线程不是。
+
 默认情况下，每个父协程都要等待它的子协程全部完成后，才能结束自己。
 当一个父协程被取消的时候，所有它的子协程也会被递归的取消。
 
@@ -277,7 +279,9 @@ GlobalScope.launch {
 在 GlobalScope 中启动的协程类似于守护线程，不能让进程保活。
 慎用。
 
-> 从这里可以看到协程和线程的另一个不同：协程是结构化的，而线程不是。
+谈到作用域，这里需要提到`coroutineScope`和`supervisorScope`这两个全局函数。
+使用`coroutineScope`函数会新建一个作用域，然后当前协程会被挂起，直到该作用域内所有的子协程执行完毕为止。
+`supervisorScope`和前者相似，唯一的不同是，后者子协程的异常并不会导致父协程的退出。
 
 `G_ScopeTest`
 
@@ -286,16 +290,6 @@ GlobalScope.launch {
 协程里的异常都是可以 try-catch 的。
 对于没有 try-catch 的异常，你可以添加一个`CoroutineExceptionHandler`的上下文来处理，
 它和`Thread.UncaughtExceptionHandler`很相似。
-
-**取消协程**
-
-协程的取消是通过在挂起点抛出`CancellationException`异常来实现的。
-这个异常并不会影响父协程，所以当你使用`Job.cancel()`来取消一个协程时，并不会引起它的父协程的取消。
-但如果协程抛出了`CancellationException`以外的异常，那么它的父协程将会被取消，而且它的根作用域内的所有协程都会被取消。
-
-当协程被取消时，你可以在它的挂起点捕捉到`CancellationException`。
-当该异常被捕捉时，协程会继续执行到下一个挂起点，然后又会抛出`CancellationException`。
-也就是说，协程只允许你短暂地捕获`CancellationException`。
 
 **SupervisorJob**
 
@@ -307,8 +301,7 @@ GlobalScope.launch {
 ```kotlin
 GlobalScope.launch {
     log(1)
-    val supervisorJob = SupervisorJob()
-    launch(supervisorJob) {
+    launch(SupervisorJob()) {
         log(2)
         throw Exception("3.e")
     }
@@ -317,6 +310,17 @@ GlobalScope.launch {
 }
 ```
 
+## 取消协程
+
+协程的取消是通过在挂起点抛出`CancellationException`异常来实现的。
+这个异常并不会影响父协程，所以当你使用`Job.cancel()`来取消一个协程时，并不会引起它的父协程的取消。
+但如果协程抛出了`CancellationException`以外的异常，那么它的父协程将会被取消，而且它的根作用域内的所有协程都会被取消。
+
+当协程被取消时，你可以在它的挂起点捕捉到`CancellationException`。
+当该异常被捕捉时，协程会继续执行到下一个挂起点，然后又会抛出`CancellationException`。
+也就是说，协程只允许你短暂地捕获`CancellationException`。
+
 ## 参考
 
+- [Kotlin 协程官方文档](https://www.kotlincn.net/docs/reference/coroutines/coroutines-guide.html)
 - [破解 Kotlin 协程](https://juejin.im/user/5cea6293e51d45775e33f4dd)

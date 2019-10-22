@@ -56,15 +56,22 @@ class H_ExceptionTest : ITest {
     }
 
     @Test
-    fun supervisorJob() = runBlocking {
-        log(1)
-        val supervisorJob = SupervisorJob()
-        launch(supervisorJob) {
-            log(2)
-            throw Exception("3.e")
+    fun testJob() {
+        val scope = CoroutineScope(Job())
+        runBlocking {
+            log(1)
+            scope.launch {
+                log(2)
+                throw Exception("3.e")
+            }
+            scope.launch {
+                delay(100)
+                log(4)
+            }
+            yield()
+            log(5)
         }
-        yield()
-        log(4)
+        Thread.sleep(1000)
     }
 
     private fun createExceptionHandler(): CoroutineExceptionHandler {
