@@ -279,6 +279,10 @@ GlobalScope.launch {
 
 > 从这里可以看到协程和线程的另一个不同：协程是结构化的，而线程不是。
 
+谈到作用域，这里需要提到`coroutineScope`和`supervisorScope`这两个全局函数。
+使用`coroutineScope`函数会立即执行参数中的 lambda 表达式，然后挂起当前协程，直到 lambda 表达式中所有的子协程执行完毕为止。
+`supervisorScope`和前者相似，唯一的不同是，后者子协程的异常并不会导致父协程的退出。
+
 `G_ScopeTest`
 
 ## 异常处理
